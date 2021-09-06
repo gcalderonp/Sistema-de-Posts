@@ -7,10 +7,32 @@ use App\Models\Post;
 use App\Models\Tag;
 use Illuminate\Http\Request;
 
+// importo el facade cache para hacer uso de cache
+use Illuminate\Support\Facades\Cache;
+
 class PostController extends Controller
 {
     public function index(){
-        $posts = Post::where('status', 2)->latest('id')->paginate(8);
+
+
+        // se pregunta si por la url se esta pasando informacion de la pagina
+
+        if(request()->page){
+            // si ya a sido enviada se almacena en una variable la key posts concatenado con el numero de pagina visitada
+            $key = 'posts' . request()->page;
+        }else{
+            // caso contrario que solo almacene posts
+            $key = 'posts';
+        }
+        // pregunta si esta almacenado en cache informacion con la clave posts
+        if (Cache::has($key)) {
+            // si es que existe info, la recupero en una variable
+            $posts = Cache::get($key);
+        } else {
+            // caso contrario genero la consulta y la almaceno en cache
+            $posts = Post::where('status', 2)->latest('id')->paginate(8);
+            Cache::put($key, $posts);
+        }
 
         return view('post.index', compact('posts'));
     }
